@@ -96,7 +96,7 @@ void Trans::Hashentry::store(locktype lock, score sc, int work) {
   Result::Result(score s, int w, int b) : sc(s), work(w), best(b) { }
 
   Book::Book(Trans &tt, const char *filename): bookfile(filename), ndupes(0) {
-    bd = open(bookfile, O_RDONLY);
+    bd = open(bookfile, O_RDWR | O_CREAT, S_IRUSR | S_IWUSR);
     assert(bd >= 0);
     bitboard bb = 0L;
     Result rslt;
