@@ -8,3 +8,5 @@ C488
 # testing
 test.log
 
+# profiles
+perf.data*
