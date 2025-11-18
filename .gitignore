@@ -1,0 +1,10 @@
+# bookfiles
+book*
+
+# binaries
+C476
+C488
+
+# testing
+test.log
+
