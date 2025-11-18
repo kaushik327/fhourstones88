@@ -16,7 +16,7 @@ class Window {
   Game game;
   Search search;
   static const char *optns[];
-  int moves[SIZE],nmoves, movenr;
+  int moves[SIZE], nmoves, movenr;
 
 public:
   Window(const char *bookfile);
