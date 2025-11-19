@@ -301,10 +301,10 @@ score Search::solve() {
 }
 score Search::dab(int depth, int alpha, int beta) {
   nodes++;
-  if (game->haswon(game->color[1 - (game->nplies & 1)]))
-    return LOSS;
   if (game->nplies == SIZE) // no move left
     return DRAW;
+  if (game->haswon(game->color[1 - (game->nplies & 1)]))
+    return LOSS;
   Result rslt = book.find(game);
   score ttscore = rslt.sc;
   if (ttscore == UNKNOWN) {
