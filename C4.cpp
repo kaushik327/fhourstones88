@@ -9,7 +9,7 @@
 // This software must not be sold for profit.
 // You may redistribute if your distributees have the
 // same rights and restrictions.
-
+#include <cctype>
 #include "Window.h"
 
 int main(int argc, const char *argv[]) {
@@ -23,26 +23,21 @@ int main(int argc, const char *argv[]) {
   wins.refresh();
   int c;
   while ((c = getchar()) != EOF && c != 'q') {
-    switch (c) {
-    case '1':
-    case '2':
-    case '3':
-    case '4':
-    case '5':
-    case '6':
-    case '7':
-    case '8':
-    case '9':
-      ok = wins.play(c - '1');
-      break;
-    case '\n':
-      ok = wins.solve();
-      wins.reset();
-      break;
-    }
+    if (isdigit(c)) {
+        int num = c - '0';
+        while ((c = getchar()) != EOF && isdigit(c)) {
+            num = num * 10 + (c - '0');
+        }
+        ungetc(c, stdin);
+        
+        ok = wins.play(num - 1);
+    } else if (c == '\n') {
+        ok = wins.solve();
+        wins.reset();
+    }    
     if (!ok) {
-      putchar('\7');
-      ok = true;
+        putchar('\7');
+        ok = true;
     }
   }
   printf("Be seeing you...\n");

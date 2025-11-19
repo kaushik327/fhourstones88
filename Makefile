@@ -14,3 +14,4 @@ clean :
 	rm -f C488 C476
 
 all: clean C488 C476
+	./test.sh
