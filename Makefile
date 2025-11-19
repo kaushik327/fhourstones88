@@ -12,3 +12,5 @@ C476 :  Makefile  $(CFILES)
 
 clean :
 	rm -f C488 C476
+
+all: clean C488 C476
