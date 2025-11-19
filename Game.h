@@ -49,18 +49,26 @@ public:
   int moves[SIZE], nplies;
   char hight[WIDTH]; // holds bit index of lowest free square
 
+  static bitboard zobrist_pieces[2][SIZE1];
+  static bitboard zobrist_turn;
+  static bool zobrist_initialized;
+  bitboard hash;
+  static void init_zobrist();
+
   void reset() {
+    if (!zobrist_initialized)
+      init_zobrist();
+    
     nplies = 0;
     color[0] = color[1] = (bitboard)0;
     for (int i = 0; i < WIDTH; i++)
       hight[i] = (char)(HEIGHT1 * i);
+    
+    hash = zobrist_turn;
   }
 
   bitboard positioncode() const {
-    return color[nplies & 1] + color[0] + color[1] + BOTTOM;
-    // color[0] + color[1] + BOTTOM forms bitmap of hights
-    // so that positioncode() is a complete board encoding
-    // where player to move has 1s
+    return hash;
   }
 
   void printMoves() {
@@ -122,11 +130,23 @@ public:
 
   void backmove() {
     int n = moves[--nplies];
-    color[nplies & 1] ^= (bitboard)1 << --hight[n];
+    int player = nplies & 1;
+    int square = --hight[n];
+    
+    hash ^= zobrist_turn;
+    hash ^= zobrist_pieces[player][square];
+    
+    color[player] ^= (bitboard)1 << square;
   }
 
   void makemove(int n) {
-    color[nplies & 1] ^= (bitboard)1 << hight[n]++;
+    int player = nplies & 1;
+    int square = hight[n];
+    
+    hash ^= zobrist_pieces[player][square];
+    hash ^= zobrist_turn;
+    
+    color[player] ^= (bitboard)1 << hight[n]++;
     moves[nplies++] = n;
   }
 };
