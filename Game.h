@@ -77,7 +77,7 @@ public:
   }
 
   // return whether newboard lacks overflowing column
-  int islegal(bitboard newboard) { return (newboard & TOP) == 0; }
+  __attribute__((always_inline)) inline int islegal(bitboard newboard) { return (newboard & TOP) == 0; }
 
   // return whether columns col has room
   int isplayable(int col) {
@@ -88,14 +88,14 @@ public:
   // return number of stones in column col
   int height(int col) { return hight[col] % HEIGHT1; }
 
-  bitboard haswond(bitboard x1, int dir) {
+  __attribute__((always_inline)) inline bitboard haswond(bitboard x1, int dir) {
     bitboard x2 = x1 & (x1 >> dir);
     return x2 & (x2 >> 2 * dir);
   }
 
   // return non-zero iff newboard includes a win
   // (bitboard of least significant positions of 4-in-a-rows)
-  bitboard haswon(bitboard x1) {
+  __attribute__((hot)) inline bitboard haswon(bitboard x1) {
     return haswond(x1, HEIGHT) | haswond(x1, HEIGHT1) | haswond(x1, 1) |
            haswond(x1, HEIGHT2);
   }
@@ -124,7 +124,7 @@ public:
   }
 
   // return whether newboard is legal and includes a win
-  int islegalhaswon(bitboard newboard) {
+  __attribute__((always_inline)) inline int islegalhaswon(bitboard newboard) {
     return islegal(newboard) && haswon(newboard);
   }
 
