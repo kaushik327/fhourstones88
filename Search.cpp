@@ -57,29 +57,6 @@ uint64_t Hash::nhashed = 0;
 
 Hash::Hash(Trans &tt, const Game *game) {
   bitboard htemp = game->hash;
-  if (game->nplies < SYMMREC) {
-    bitboard htemp2 = game->zobrist_turn * (game->nplies & 1);
-    for (int player = 0; player < 2; player++) {
-      bitboard pieces = game->color[player];
-      while (pieces) {
-        int pos = 0;
-        bitboard tmp = pieces;
-        while (tmp) {
-          if (tmp & COL1) break;
-          pos++;
-          tmp >>= HEIGHT1;
-        }
-        int col = pos;
-        int row = __builtin_ctzll(pieces) % HEIGHT1;
-        int sym_col = WIDTH - 1 - col;
-        int sym_square = sym_col * HEIGHT1 + row;
-        htemp2 ^= game->zobrist_pieces[player][sym_square];
-        pieces &= pieces - 1;
-      }
-    }
-    if (htemp2 < htemp)
-      htemp = htemp2;
-  }
   
   lock = (locktype)(SIZE1 > LOCKSIZE ? htemp >> (SIZE1 - LOCKSIZE) : htemp);
   he = &tt.ht[(uint32_t)(htemp % TRANSIZE)];
@@ -174,11 +151,10 @@ bool Book::_store(bitboard hsh, Result rslt) {
   }
   return found;
 }
+
+__attribute__((always_inline)) inline
 bitboard Book::hash(Game *game) {
-  bitboard htemp = game->positioncode(), htemp2 = 0;
-  for (bitboard htmp = htemp; htmp != 0; htmp >>= HEIGHT1)
-    htemp2 = htemp2 << HEIGHT1 | (htmp & COL1);
-  return htemp2 < htemp ? htemp2 : htemp;
+  return game->hash;
 }
 
 Search::Search(Window *win, Game &g, const char *bookfile)
@@ -301,10 +277,10 @@ score Search::solve() {
 }
 score Search::dab(int depth, int alpha, int beta) {
   nodes++;
-  if (game->haswon(game->color[1 - (game->nplies & 1)]))
-    return LOSS;
   if (game->nplies == SIZE) // no move left
     return DRAW;
+  if (game->haswon(game->color[1 - (game->nplies & 1)]))
+    return LOSS;
   Result rslt = book.find(game);
   score ttscore = rslt.sc;
   if (ttscore == UNKNOWN) {
