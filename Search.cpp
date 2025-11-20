@@ -11,6 +11,7 @@
 // same rights and restrictions.
 
 #include "Window.h"
+#include <bit>
 
 void Trans::Hashentry::store(locktype lock, score sc, int work) {
   if (biglock == lock || work >= bigwork) {
@@ -57,7 +58,7 @@ uint64_t Hash::nhashed = 0;
 
 Hash::Hash(Trans &tt, const Game *game) {
   bitboard htemp = game->hash;
-  
+
   lock = (locktype)(SIZE1 > LOCKSIZE ? htemp >> (SIZE1 - LOCKSIZE) : htemp);
   he = &tt.ht[(uint32_t)(htemp % TRANSIZE)];
   oldhashed = nhashed;
@@ -69,9 +70,9 @@ score Hash::transpose() {
 }
 int Hash::store(score sc) {
   // work = log #positions stored
-  int work = 0;
-  for (uint64_t poscnt = nhashed++ - oldhashed; (poscnt >>= 1) != 0; work++)
-    ;
+  uint64_t poscnt = nhashed++ - oldhashed;
+  int work = poscnt ? std::bit_width(poscnt) - 1 : 0;
+
   he->store(lock, sc, work);
   return work;
 }
@@ -152,8 +153,7 @@ bool Book::_store(bitboard hsh, Result rslt) {
   return found;
 }
 
-__attribute__((always_inline)) inline
-bitboard Book::hash(Game *game) {
+__attribute__((always_inline)) inline bitboard Book::hash(Game *game) {
   return game->hash;
 }
 

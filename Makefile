@@ -1,7 +1,7 @@
 # GNU Makefile
 
 CC = g++
-CFLAGS = -std=c++11 -O3 -march=native -flto -Wextra -Wall
+CFLAGS = -std=c++20 -O3 -march=native -flto -Wextra -Wall
 CFILES = C4.cpp Search.cpp Window.cpp Game.cpp
 
 C488 : 	Makefile $(CFILES)
