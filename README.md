@@ -14,10 +14,10 @@ and will solve the resulting position. An example session:
 > make
 g++ -std=c++11 -O3 -Wextra -Wall -DWIDTH=8 -DHEIGHT=8 -DBOOKWORK=24 -DLOCKSIZE=50 -DTRANSIZE=8306069 C4.cpp Search.cpp Window.cpp -o C488
 > ./C488
-444445555
+4 4 4 4 4 5 5 5 5
 Solving . . .    
 score +  work 33  1 pos / 1 msec = 1 Kpos/sec
-1111111188888888222222777777
+1 1 1 1 1 1 1 1 8 8 8 8 8 8 8 8 2 2 2 2 2 2 7 7 7 7 7 7
 Solving . . .    
 score +  work 15  513960 pos / 153 msec = 3359 Kpos/sec
 ^D
