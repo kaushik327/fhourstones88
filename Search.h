@@ -204,7 +204,7 @@ public:
   Trans tt;
   Book book;
   uint64_t nodes, msecs;
-  int work;
+  int work = 0;
 
   Search(Window *win, Game &g, const char *bookfile);
   uint64_t millisecs();
