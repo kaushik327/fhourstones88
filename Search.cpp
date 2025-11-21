@@ -266,7 +266,10 @@ void Search::clear() {
 score Search::solve() {
   nodes = 0;
   msecs = millisecs();
-  score sc = dab(8, LOSS, WIN);
+
+  // TODO: for some reason changing this to 0 breaks correctness
+  score sc = dab(1, LOSS, WIN);
+
   if (sc == UNKNOWN) {
     book.bopen();
     sc = ab(LOSS, WIN);

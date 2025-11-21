@@ -1,4 +1,5 @@
 #!/bin/bash
+rm book76 book88 # deleting cache in case
 start=$(date +%s.%N)
 ./C476 < test-inputs > test.log
 end=$(date +%s.%N)
