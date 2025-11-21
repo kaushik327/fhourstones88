@@ -159,6 +159,8 @@ __attribute__((always_inline)) inline bitboard Book::hash(Game *game) {
 
 Search::Search(Window *win, Game &g, const char *bookfile)
     : parent(win), game(&g), tt(), book(tt, bookfile) {}
+
+static thread_local bool g_in_parallel_worker = false;
 uint64_t Search::millisecs() {
   struct rusage foo;
   int rc = getrusage(RUSAGE_SELF, &foo);
@@ -203,7 +205,10 @@ score Search::ab(int alpha, int beta) {
     return sc;
   }
   Hash hash(tt, game);
-  score ttscore = hash.transpose();
+  score ttscore = UNKNOWN;
+  if (!g_in_parallel_worker) {
+    ttscore = hash.transpose();
+  }
   if (ttscore != UNKNOWN) {
     if (ttscore == DRAWLOSS) {
       if ((beta = DRAW) <= alpha)
@@ -225,36 +230,74 @@ score Search::ab(int alpha, int beta) {
     }
   }
 #endif
+  // Order moves once before parallel/sequential evaluation
+  int ordered[WIDTH];
+  for (int i = 0; i < nav; i++)
+    ordered[i] = hist[side].ordermoves(av + i, nav - i);
+
   uint64_t bestdhashed = 0;
   int besti = 0;
   score sc = LOSS;
-  for (int i = 0; i < nav; i++) {
-    uint64_t mvoldhashed = Hash::nhashed;
-    game->makemove(hist[side].ordermoves(av + i, nav - i) / HEIGHT1);
-    score val = (score)(LOSSWIN - ab(LOSSWIN - beta, LOSSWIN - alpha));
-    game->backmove();
-    uint64_t dhashed = Hash::nhashed - mvoldhashed;
-    if (val > sc) {
-      besti = i;
-      bestdhashed = dhashed;
-      if ((sc = val) > alpha && game->nplies >= BRUTEPLY &&
-          (alpha = val) >= beta) {
-        if (sc == DRAW && i < nav - 1)
-          sc = DRAWWIN;
-        hist[side].bestmove(av, besti);
-        break;
+
+  // Parallelize at root if enough legal moves
+  if (nav >= 4) {
+    score childScores[WIDTH];
+    Game *saved_game = game;
+#pragma omp parallel for schedule(guided)
+    for (int i = 0; i < nav; i++) {
+      Game child = *saved_game;
+      g_in_parallel_worker = true;
+      game = &child;
+      child.makemove(ordered[i] / HEIGHT1);
+      childScores[i] = (score)(LOSSWIN - ab(LOSSWIN - beta, LOSSWIN - alpha));
+      game = saved_game;
+    }
+    // Sequential reduction
+    for (int i = 0; i < nav; i++) {
+      score val = childScores[i];
+      if (val > sc) {
+        besti = i;
+        if ((sc = val) > alpha && game->nplies >= BRUTEPLY &&
+            (alpha = val) >= beta) {
+          if (sc == DRAW && i < nav - 1)
+            sc = DRAWWIN;
+          break;
+        }
       }
-    } else if (val == sc && dhashed > bestdhashed) {
-      besti = i;
-      bestdhashed = dhashed;
+    }
+    hist[side].bestmove(ordered, besti);
+  } else {
+    // Sequential fallback for small nav
+    for (int i = 0; i < nav; i++) {
+      uint64_t mvoldhashed = Hash::nhashed;
+      game->makemove(ordered[i] / HEIGHT1);
+      score val = (score)(LOSSWIN - ab(LOSSWIN - beta, LOSSWIN - alpha));
+      game->backmove();
+      uint64_t dhashed = Hash::nhashed - mvoldhashed;
+      if (val > sc) {
+        besti = i;
+        bestdhashed = dhashed;
+        if ((sc = val) > alpha && game->nplies >= BRUTEPLY &&
+            (alpha = val) >= beta) {
+          if (sc == DRAW && i < nav - 1)
+            sc = DRAWWIN;
+          hist[side].bestmove(ordered, besti);
+          break;
+        }
+      } else if (val == sc && dhashed > bestdhashed) {
+        besti = i;
+        bestdhashed = dhashed;
+      }
     }
   }
-  if (sc == LOSSWIN - ttscore) // combine < and >
-    sc = DRAW;
-  work = hash.store(sc);
-  if (work >= BOOKWORK) {
-    book.store(game, sc, work, 1 + av[besti]);
-    parent->showgamemoves();
+  if (!g_in_parallel_worker) {
+    if (sc == LOSSWIN - ttscore) // combine < and >
+      sc = DRAW;
+    work = hash.store(sc);
+    if (work >= BOOKWORK) {
+      book.store(game, sc, work, 1 + ordered[besti]);
+      parent->showgamemoves();
+    }
   }
   return sc;
 }
