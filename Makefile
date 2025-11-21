@@ -1,6 +1,6 @@
 # GNU Makefile
 
-CC = g++
+CC = clang++
 CFLAGS = -std=c++20 -O3 -march=native -flto -Wextra -Wall
 CFILES = C4.cpp Search.cpp Window.cpp Game.cpp
 
